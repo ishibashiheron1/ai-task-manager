@@ -37,7 +37,6 @@ const taskList = document.getElementById("task-list");
 // -----------------------------
 
 async function signUp() {
-
     const email = emailInput.value.trim();
     const password = passwordInput.value;
 
@@ -68,7 +67,6 @@ async function signUp() {
 // -----------------------------
 
 async function logIn() {
-
     const email = emailInput.value.trim();
     const password = passwordInput.value;
 
@@ -77,11 +75,10 @@ async function logIn() {
         return;
     }
 
-    const { data, error } =
-        await db.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
+    const { data, error } = await db.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
 
     if (error) {
         authMessage.textContent = error.message;
@@ -89,7 +86,6 @@ async function logIn() {
     }
 
     authMessage.textContent = "";
-
     showLoggedInUser(data.user);
 }
 
@@ -99,7 +95,6 @@ async function logIn() {
 // -----------------------------
 
 async function logOut() {
-
     const { error } = await db.auth.signOut();
 
     if (error) {
@@ -116,7 +111,6 @@ async function logOut() {
 // -----------------------------
 
 function showLoggedInUser(user) {
-
     authSection.style.display = "none";
     userSection.style.display = "block";
 
@@ -131,7 +125,6 @@ function showLoggedInUser(user) {
 // -----------------------------
 
 function showLoggedOutUser() {
-
     authSection.style.display = "block";
     userSection.style.display = "none";
 
@@ -145,7 +138,6 @@ function showLoggedOutUser() {
 // -----------------------------
 
 async function checkUser() {
-
     const {
         data: { session }
     } = await db.auth.getSession();
@@ -159,14 +151,23 @@ async function checkUser() {
 
 
 // -----------------------------
-// LOAD TASKS
+// LOAD ONLY CURRENT USER'S TASKS
 // -----------------------------
 
 async function loadTasks() {
+    const {
+        data: { user }
+    } = await db.auth.getUser();
+
+    if (!user) {
+        taskList.innerHTML = "";
+        return;
+    }
 
     const { data, error } = await db
         .from("tasks")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
     if (error) {
@@ -183,14 +184,22 @@ async function loadTasks() {
 
 
 // -----------------------------
-// ADD TASK
+// ADD TASK FOR CURRENT USER
 // -----------------------------
 
 async function addTask() {
-
     const taskText = taskInput.value.trim();
 
     if (taskText === "") {
+        return;
+    }
+
+    const {
+        data: { user }
+    } = await db.auth.getUser();
+
+    if (!user) {
+        alert("Please log in first.");
         return;
     }
 
@@ -199,7 +208,8 @@ async function addTask() {
         .insert([
             {
                 task: taskText,
-                completed: false
+                completed: false,
+                user_id: user.id
             }
         ]);
 
@@ -210,7 +220,6 @@ async function addTask() {
     }
 
     taskInput.value = "";
-
     await loadTasks();
 }
 
@@ -220,7 +229,6 @@ async function addTask() {
 // -----------------------------
 
 function displayTask(task) {
-
     const newTask = document.createElement("li");
 
     const taskName = document.createElement("span");
@@ -232,99 +240,107 @@ function displayTask(task) {
 
 
     // COMPLETE BUTTON
-
     const completeButton = document.createElement("button");
-
     completeButton.textContent =
         task.completed ? "Undo" : "Complete";
 
-    completeButton.addEventListener(
-        "click",
-        async function () {
+    completeButton.addEventListener("click", async function () {
+        const {
+            data: { user }
+        } = await db.auth.getUser();
 
-            const { error } = await db
-                .from("tasks")
-                .update({
-                    completed: !task.completed
-                })
-                .eq("id", task.id);
-
-            if (error) {
-                alert("There was a problem updating the task.");
-                return;
-            }
-
-            await loadTasks();
+        if (!user) {
+            return;
         }
-    );
+
+        const { error } = await db
+            .from("tasks")
+            .update({
+                completed: !task.completed
+            })
+            .eq("id", task.id)
+            .eq("user_id", user.id);
+
+        if (error) {
+            alert("There was a problem updating the task.");
+            return;
+        }
+
+        await loadTasks();
+    });
 
 
     // EDIT BUTTON
-
     const editButton = document.createElement("button");
-
     editButton.textContent = "Edit";
 
-    editButton.addEventListener(
-        "click",
-        async function () {
+    editButton.addEventListener("click", async function () {
+        const updatedTask = prompt(
+            "Edit your task:",
+            task.task
+        );
 
-            const updatedTask = prompt(
-                "Edit your task:",
-                task.task
-            );
-
-            if (
-                updatedTask === null ||
-                updatedTask.trim() === ""
-            ) {
-                return;
-            }
-
-            const { error } = await db
-                .from("tasks")
-                .update({
-                    task: updatedTask.trim()
-                })
-                .eq("id", task.id);
-
-            if (error) {
-                alert("There was a problem editing the task.");
-                return;
-            }
-
-            await loadTasks();
+        if (
+            updatedTask === null ||
+            updatedTask.trim() === ""
+        ) {
+            return;
         }
-    );
+
+        const {
+            data: { user }
+        } = await db.auth.getUser();
+
+        if (!user) {
+            return;
+        }
+
+        const { error } = await db
+            .from("tasks")
+            .update({
+                task: updatedTask.trim()
+            })
+            .eq("id", task.id)
+            .eq("user_id", user.id);
+
+        if (error) {
+            alert("There was a problem editing the task.");
+            return;
+        }
+
+        await loadTasks();
+    });
 
 
     // DELETE BUTTON
-
     const deleteButton = document.createElement("button");
-
     deleteButton.textContent = "Delete";
 
-    deleteButton.addEventListener(
-        "click",
-        async function () {
+    deleteButton.addEventListener("click", async function () {
+        const {
+            data: { user }
+        } = await db.auth.getUser();
 
-            const { error } = await db
-                .from("tasks")
-                .delete()
-                .eq("id", task.id);
-
-            if (error) {
-                alert("There was a problem deleting the task.");
-                return;
-            }
-
-            await loadTasks();
+        if (!user) {
+            return;
         }
-    );
+
+        const { error } = await db
+            .from("tasks")
+            .delete()
+            .eq("id", task.id)
+            .eq("user_id", user.id);
+
+        if (error) {
+            alert("There was a problem deleting the task.");
+            return;
+        }
+
+        await loadTasks();
+    });
 
 
-    // ADD TO PAGE
-
+    // ADD TASK TO PAGE
     newTask.appendChild(taskName);
     newTask.appendChild(completeButton);
     newTask.appendChild(editButton);
@@ -339,41 +355,30 @@ function displayTask(task) {
 // -----------------------------
 
 signupButton.addEventListener("click", signUp);
-
 loginButton.addEventListener("click", logIn);
-
 logoutButton.addEventListener("click", logOut);
-
 addTaskButton.addEventListener("click", addTask);
 
 
 // Press Enter to add task
-
-taskInput.addEventListener(
-    "keydown",
-    function (event) {
-
-        if (event.key === "Enter") {
-            addTask();
-        }
+taskInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        addTask();
     }
-);
+});
 
 
 // -----------------------------
 // AUTH STATE CHANGES
 // -----------------------------
 
-db.auth.onAuthStateChange(
-    function (event, session) {
-
-        if (session && session.user) {
-            showLoggedInUser(session.user);
-        } else {
-            showLoggedOutUser();
-        }
+db.auth.onAuthStateChange(function (event, session) {
+    if (session && session.user) {
+        showLoggedInUser(session.user);
+    } else {
+        showLoggedOutUser();
     }
-);
+});
 
 
 // -----------------------------
