@@ -1,70 +1,37 @@
-const taskInput = document.querySelector("input");
-const addTaskButton = document.querySelector("button");
-const taskList = document.querySelector("ul");
+<!DOCTYPE html>
+<html lang="en">
 
-// Remove example task when page loads
-taskList.innerHTML = "";
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Task Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 
-function addTask() {
-    const taskText = taskInput.value.trim();
+<body>
 
-    if (taskText === "") {
-        return;
-    }
+    <div class="container">
 
-    const newTask = document.createElement("li");
+        <h1>AI Task Manager</h1>
+        <p>Keep track of your daily tasks.</p>
 
-    const taskName = document.createElement("span");
-    taskName.textContent = taskText;
+        <div class="task-form">
+            <input type="text" placeholder="Enter a new task">
+            <button>Add Task</button>
+        </div>
 
-    // Complete button
-    const completeButton = document.createElement("button");
-    completeButton.textContent = "Complete";
+        <h2>My Tasks</h2>
 
-    completeButton.addEventListener("click", function () {
-        if (taskName.style.textDecoration === "line-through") {
-            taskName.style.textDecoration = "none";
-        } else {
-            taskName.style.textDecoration = "line-through";
-        }
-    });
+        <ul></ul>
 
-    // Edit button
-    const editButton = document.createElement("button");
-    editButton.textContent = "Edit";
+    </div>
 
-    editButton.addEventListener("click", function () {
-        const updatedTask = prompt("Edit your task:", taskName.textContent);
+    <!-- Supabase JavaScript Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        if (updatedTask !== null && updatedTask.trim() !== "") {
-            taskName.textContent = updatedTask.trim();
-        }
-    });
+    <!-- Our JavaScript -->
+    <script src="script.js"></script>
 
-    // Delete button
-    const deleteButton = document.createElement("button");
-    deleteButton.textContent = "Delete";
+</body>
 
-    deleteButton.addEventListener("click", function () {
-        newTask.remove();
-    });
-
-    newTask.appendChild(taskName);
-    newTask.appendChild(completeButton);
-    newTask.appendChild(editButton);
-    newTask.appendChild(deleteButton);
-
-    taskList.appendChild(newTask);
-
-    taskInput.value = "";
-}
-
-// Add task using button
-addTaskButton.addEventListener("click", addTask);
-
-// Add task by pressing Enter
-taskInput.addEventListener("keypress", function (event) {
-    if (event.key === "Enter") {
-        addTask();
-    }
-});
+</html>
