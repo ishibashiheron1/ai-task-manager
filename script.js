@@ -14,13 +14,152 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // HTML ELEMENTS
 // -----------------------------
 
-const taskInput = document.querySelector("input");
-const addTaskButton = document.querySelector(".task-form button");
-const taskList = document.querySelector("ul");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+
+const signupButton = document.getElementById("signup-button");
+const loginButton = document.getElementById("login-button");
+const logoutButton = document.getElementById("logout-button");
+
+const authSection = document.getElementById("auth-section");
+const userSection = document.getElementById("user-section");
+
+const authMessage = document.getElementById("auth-message");
+const userEmail = document.getElementById("user-email");
+
+const taskInput = document.getElementById("task-input");
+const addTaskButton = document.getElementById("add-task-button");
+const taskList = document.getElementById("task-list");
 
 
 // -----------------------------
-// LOAD TASKS FROM DATABASE
+// SIGN UP
+// -----------------------------
+
+async function signUp() {
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    if (email === "" || password === "") {
+        authMessage.textContent = "Please enter an email and password.";
+        return;
+    }
+
+    const { data, error } = await db.auth.signUp({
+        email: email,
+        password: password
+    });
+
+    if (error) {
+        authMessage.textContent = error.message;
+        return;
+    }
+
+    authMessage.textContent =
+        "Account created! Check your email if confirmation is required.";
+
+    console.log("Sign up successful:", data);
+}
+
+
+// -----------------------------
+// LOG IN
+// -----------------------------
+
+async function logIn() {
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    if (email === "" || password === "") {
+        authMessage.textContent = "Please enter an email and password.";
+        return;
+    }
+
+    const { data, error } =
+        await db.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+    if (error) {
+        authMessage.textContent = error.message;
+        return;
+    }
+
+    authMessage.textContent = "";
+
+    showLoggedInUser(data.user);
+}
+
+
+// -----------------------------
+// LOG OUT
+// -----------------------------
+
+async function logOut() {
+
+    const { error } = await db.auth.signOut();
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    showLoggedOutUser();
+}
+
+
+// -----------------------------
+// SHOW LOGGED-IN PAGE
+// -----------------------------
+
+function showLoggedInUser(user) {
+
+    authSection.style.display = "none";
+    userSection.style.display = "block";
+
+    userEmail.textContent = user.email;
+
+    loadTasks();
+}
+
+
+// -----------------------------
+// SHOW LOGGED-OUT PAGE
+// -----------------------------
+
+function showLoggedOutUser() {
+
+    authSection.style.display = "block";
+    userSection.style.display = "none";
+
+    userEmail.textContent = "";
+    taskList.innerHTML = "";
+}
+
+
+// -----------------------------
+// CHECK LOGIN STATUS
+// -----------------------------
+
+async function checkUser() {
+
+    const {
+        data: { session }
+    } = await db.auth.getSession();
+
+    if (session && session.user) {
+        showLoggedInUser(session.user);
+    } else {
+        showLoggedOutUser();
+    }
+}
+
+
+// -----------------------------
+// LOAD TASKS
 // -----------------------------
 
 async function loadTasks() {
@@ -44,7 +183,7 @@ async function loadTasks() {
 
 
 // -----------------------------
-// ADD A TASK
+// ADD TASK
 // -----------------------------
 
 async function addTask() {
@@ -55,15 +194,14 @@ async function addTask() {
         return;
     }
 
-    const { data, error } = await db
+    const { error } = await db
         .from("tasks")
         .insert([
             {
                 task: taskText,
                 completed: false
             }
-        ])
-        .select();
+        ]);
 
     if (error) {
         console.error("Error adding task:", error);
@@ -78,7 +216,7 @@ async function addTask() {
 
 
 // -----------------------------
-// DISPLAY A TASK
+// DISPLAY TASK
 // -----------------------------
 
 function displayTask(task) {
@@ -94,87 +232,99 @@ function displayTask(task) {
 
 
     // COMPLETE BUTTON
+
     const completeButton = document.createElement("button");
-    completeButton.textContent = task.completed ? "Undo" : "Complete";
 
-    completeButton.addEventListener("click", async function () {
+    completeButton.textContent =
+        task.completed ? "Undo" : "Complete";
 
-        const newCompletedStatus = !task.completed;
+    completeButton.addEventListener(
+        "click",
+        async function () {
 
-        const { error } = await db
-            .from("tasks")
-            .update({
-                completed: newCompletedStatus
-            })
-            .eq("id", task.id);
+            const { error } = await db
+                .from("tasks")
+                .update({
+                    completed: !task.completed
+                })
+                .eq("id", task.id);
 
-        if (error) {
-            console.error("Error updating task:", error);
-            alert("There was a problem updating the task.");
-            return;
+            if (error) {
+                alert("There was a problem updating the task.");
+                return;
+            }
+
+            await loadTasks();
         }
-
-        await loadTasks();
-    });
+    );
 
 
     // EDIT BUTTON
+
     const editButton = document.createElement("button");
+
     editButton.textContent = "Edit";
 
-    editButton.addEventListener("click", async function () {
+    editButton.addEventListener(
+        "click",
+        async function () {
 
-        const updatedTask = prompt(
-            "Edit your task:",
-            task.task
-        );
+            const updatedTask = prompt(
+                "Edit your task:",
+                task.task
+            );
 
-        if (
-            updatedTask === null ||
-            updatedTask.trim() === ""
-        ) {
-            return;
+            if (
+                updatedTask === null ||
+                updatedTask.trim() === ""
+            ) {
+                return;
+            }
+
+            const { error } = await db
+                .from("tasks")
+                .update({
+                    task: updatedTask.trim()
+                })
+                .eq("id", task.id);
+
+            if (error) {
+                alert("There was a problem editing the task.");
+                return;
+            }
+
+            await loadTasks();
         }
-
-        const { error } = await db
-            .from("tasks")
-            .update({
-                task: updatedTask.trim()
-            })
-            .eq("id", task.id);
-
-        if (error) {
-            console.error("Error editing task:", error);
-            alert("There was a problem editing the task.");
-            return;
-        }
-
-        await loadTasks();
-    });
+    );
 
 
     // DELETE BUTTON
+
     const deleteButton = document.createElement("button");
+
     deleteButton.textContent = "Delete";
 
-    deleteButton.addEventListener("click", async function () {
+    deleteButton.addEventListener(
+        "click",
+        async function () {
 
-        const { error } = await db
-            .from("tasks")
-            .delete()
-            .eq("id", task.id);
+            const { error } = await db
+                .from("tasks")
+                .delete()
+                .eq("id", task.id);
 
-        if (error) {
-            console.error("Error deleting task:", error);
-            alert("There was a problem deleting the task.");
-            return;
+            if (error) {
+                alert("There was a problem deleting the task.");
+                return;
+            }
+
+            await loadTasks();
         }
-
-        await loadTasks();
-    });
+    );
 
 
-    // ADD EVERYTHING TO THE PAGE
+    // ADD TO PAGE
+
     newTask.appendChild(taskName);
     newTask.appendChild(completeButton);
     newTask.appendChild(editButton);
@@ -188,21 +338,46 @@ function displayTask(task) {
 // BUTTON EVENTS
 // -----------------------------
 
+signupButton.addEventListener("click", signUp);
+
+loginButton.addEventListener("click", logIn);
+
+logoutButton.addEventListener("click", logOut);
+
 addTaskButton.addEventListener("click", addTask);
 
 
-// Add task by pressing Enter
-taskInput.addEventListener("keydown", function (event) {
+// Press Enter to add task
 
-    if (event.key === "Enter") {
-        addTask();
+taskInput.addEventListener(
+    "keydown",
+    function (event) {
+
+        if (event.key === "Enter") {
+            addTask();
+        }
     }
-
-});
+);
 
 
 // -----------------------------
-// LOAD TASKS WHEN PAGE OPENS
+// AUTH STATE CHANGES
 // -----------------------------
 
-loadTasks();
+db.auth.onAuthStateChange(
+    function (event, session) {
+
+        if (session && session.user) {
+            showLoggedInUser(session.user);
+        } else {
+            showLoggedOutUser();
+        }
+    }
+);
+
+
+// -----------------------------
+// START APP
+// -----------------------------
+
+checkUser();
