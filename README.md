@@ -81,7 +81,10 @@ The application supports the four basic CRUD operations:
 
 To run the project locally:
 
-1. Clone this repository.
+1. Clone this repository:
+
+   `git clone https://github.com/ishibashiheron1/ai-task-manager.git`
+
 2. Open the project folder in Visual Studio Code.
 3. Open `index.html` using Live Server.
 4. The application will run in your web browser.
@@ -103,7 +106,9 @@ https://radiant-sprite-843767.netlify.app
 
 ## Demo Video
 
-Demo video: https://youtu.be/iUFHTWIPaBw
+Watch the project demonstration here:
+
+https://youtu.be/iUFHTWIPaBw
 
 ## Author
 
