@@ -15,20 +15,64 @@
         <h1>AI Task Manager</h1>
         <p>Keep track of your daily tasks.</p>
 
-        <div class="task-form">
-            <input type="text" placeholder="Enter a new task">
-            <button>Add Task</button>
+        <!-- Authentication Section -->
+        <div id="auth-section">
+            <h2>Account</h2>
+
+            <input
+                type="email"
+                id="email"
+                placeholder="Email"
+            >
+
+            <input
+                type="password"
+                id="password"
+                placeholder="Password"
+            >
+
+            <button id="signup-button">Sign Up</button>
+            <button id="login-button">Log In</button>
+
+            <p id="auth-message"></p>
         </div>
 
-        <h2>My Tasks</h2>
+        <!-- Logged In Section -->
+        <div id="user-section" style="display: none;">
 
-        <ul>
-            <li>Example Task</li>
-        </ul>
+            <p>
+                Logged in as:
+                <strong id="user-email"></strong>
+            </p>
+
+            <button id="logout-button">Log Out</button>
+
+            <hr>
+
+            <div class="task-form">
+                <input
+                    type="text"
+                    id="task-input"
+                    placeholder="Enter a new task"
+                >
+
+                <button id="add-task-button">
+                    Add Task
+                </button>
+            </div>
+
+            <h2>My Tasks</h2>
+
+            <ul id="task-list"></ul>
+
+        </div>
 
     </div>
 
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Our JavaScript -->
     <script src="script.js"></script>
 
 </body>
